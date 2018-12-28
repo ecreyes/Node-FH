@@ -6,10 +6,11 @@ npm install
 
 ## Como crear un tag en github.
 Usar el siguiente comando:
-```javascript
+```bash
 git tag -a v1.0.0 -m "Primera versión"
 ```
 luego con `git tag` se puede ver la versión actual, ahora solo falta hacer:
-```javascript
+```bash
 git push --tags
 ```
+Luego ir a la sección de release,luego tags y hacer click en el tres puntitos de opciones para crear release, completar el formulario y listo.
