@@ -67,3 +67,87 @@ Para instalar yargs hay que primero crear un package.json y luego hacer:
 ```javascript
 npm i yargs --save
 ```
+luego en el archivo que se desea usar hay que escribir:
+```javascript
+const argv = require('yargs').argv
+```
+Ahora para empezar a usar este paquete, antes de el `.argv` se puede colocar `command` para los comandos en la terminal, estos son los que no tienen valores por ejemplo:
+* listar
+* crear
+
+Los parametros de `command` son los siguientes:
+```javascript
+command('nombreComando','información de ayuda',{
+    flag:{
+        opciones
+    },
+    flag2:{
+        opciones
+    }
+})
+```
+El nombre del comando a ejecutar, una descripción del comando y un objeto con los flags a usar en conjunto con el comando, ejemplo de uso:
+```javascript
+const argv = require('yargs')
+                .command('listar','Muestra la tabla de multiplicar en pantalla',{
+                    base:{
+                        demand:true,
+                        alias:'b'
+                    },
+                    limite:{
+                        alias:'l',
+                        default:10
+                    }
+                })
+                .help()
+                .argv
+const {crearArchivo} = require('./multiplicar/multiplicar');
+
+console.log(argv);
+let base = argv.base;
+let limite = argv.limite;
+crearArchivo(base,limite).then(nombre=>{
+    console.log('Se creó el archivo:',nombre);
+},error=>{
+    console.log(error);
+});
+```
+Para mostrar las valores obtenidos por parametros se puede hacer `console.log(argv)` y obtener los datos como se muesta en el código.
+
+### Optimización del cógigo yargs.
+Las opciones que se repiten se puede crear un objeto de opciones y pasarse como parámetro, tambien el código se debe sacar del archivo de ejecución y escribirlo en otro archivo para que quede más limpio, luego exportarlo y usarlo normalmente, por ejemplo quedaria exportado asi:
+```javascript
+const opt = {
+    base:{
+        demand:true,
+        alias:'b'
+    },
+    limite:{
+        alias:'l',
+        default:10
+    }
+};
+const argv = require('yargs')
+        .command('listar','Muestra la tabla de multiplicar en pantalla',opt)
+        .command('crear','Crea un archivo txt con la tabla de multiplicar',opt)
+        .help()
+        .argv;
+
+module.exports = {
+    argv
+};
+```
+y se importa de la siguiente forma:
+```javascript
+const argv = require('./config/yargs').argv;
+```
+## Colores en la consola.
+Se pueden utilizar colores en la terminal instalando un paquete:
+```javascript
+npm install colors --save
+```
+luego requerir y colocar el color, por ejemplo:
+```javascript
+const colors = require('colors');
+console.log('hello'.green); // outputs green text
+```

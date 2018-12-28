@@ -1,8 +1,8 @@
 const fs = require('fs');
-let crearArchivo = (base)=>{
+let crearArchivo = (base,limite)=>{
     return new Promise((resolve,reject)=>{
         let data = "";
-        for(let i=1; i<=10;i++){
+        for(let i=1; i<=limite;i++){
             data += `${base}*${i} = ${base*i}\n`;
         }
     
@@ -17,9 +17,21 @@ let crearArchivo = (base)=>{
     });
 };
 
-let sumar = (a,b)=>a+b;
+let listarArchivo = (base,limite)=>{
+    return new Promise((resolve,reject)=>{
+        if(!Number(base) || !Number(limite)){
+            reject("Parámetro no válido");
+            return;
+        }
+        let data = "";
+        for(let i=1;i<=limite;i++){
+            data += `${base}*${i} = ${base*i}\n`;
+        }
+        resolve(data);
+    });
+}
 
 module.exports = {
     crearArchivo,
-    sumar
+    listarArchivo
 }
