@@ -4,7 +4,7 @@ para usar estos paquetes hay que ver la version que esta instalada de node:
 ```bash
 node -v
 ```
-Luego ir a [https://nodejs.org/es/docs/](Documentación de Node) y buscar la documentación dependiendo de la versión, ahi se encontraran los paquetes que se pueden utilizar por defecto.
+Luego ir a [Documentación de Node](https://nodejs.org/es/docs/) y buscar la documentación dependiendo de la versión, ahi se encontraran los paquetes que se pueden utilizar por defecto.
 ## Requerir paquetes.
 Para usar un paquete, por ejemplo el de filesystem para escribir y leer ficheros desde node se debe escribir lo siguiente:
 ```javascript
