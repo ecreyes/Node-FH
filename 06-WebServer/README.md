@@ -89,3 +89,4 @@ ahora para ver la direccion del proyecto en la nube se puede hacer con:
 ```javascript
 heroku open
 ```
+Si por algún motivo no deja subir la app y manda error es porque el servidor debe estar dentro de 1 sola carpeta, es decir se inicializa con git la carpeta del proyecto y no debe existir otro tipo de archivos, ademas el package.json debe estar en la raiz de la carpeta
