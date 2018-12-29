@@ -1,0 +1,15 @@
+{
+  "name": "05-appclima",
+  "version": "1.0.0",
+  "description": "Aplicación del clima",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eduardo Reyes",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "yargs": "^12.0.5"
+  }
+}
