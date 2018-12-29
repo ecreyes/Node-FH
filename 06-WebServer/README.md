@@ -89,3 +89,25 @@ ahora para ver la direccion del proyecto en la nube se puede hacer con:
 ```javascript
 heroku open
 ```
+Si lanza algun error hay que ver la version que estamos usando de node con `node -v` y en el package.json agregar
+el engines como se muestra a continuación:
+```javascript
+{
+  "name": "06-webserver",
+  "version": "1.0.0",
+  "description": "WebServer de ejemplo",
+  "engines": {
+    "node": "10.3.0"
+  },
+  "main": "app.js",
+  "scripts": {
+    "start":"node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eduardo Reyes",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}
+```
