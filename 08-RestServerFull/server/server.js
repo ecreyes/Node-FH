@@ -14,7 +14,10 @@ app.use(require('./routes/usuario'));
 // BD
 const mongoose = require('mongoose');
  
-mongoose.connect('mongodb://localhost:27017/cafe',{useNewUrlParser: true},(err,res)=>{
+mongoose.connect('mongodb://localhost:27017/cafe',
+    {useNewUrlParser: true,
+    useCreateIndex: true}
+    ,(err,res)=>{
     if(err) throw err;
     console.log("Conexión BD ON");
 });

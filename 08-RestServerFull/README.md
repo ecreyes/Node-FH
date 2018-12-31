@@ -363,4 +363,99 @@ app.post('/usuarios',(req,res)=>{
 ```
 El `usuario.save(callback)` guarda la instancia y el callback recibe dos parametros uno en caso de que no se pueda guardar generando un error, y el segundo una respuesta al guardar correctamente que en este caso son todos los datos del archivo creado.
 Hay que destacar que esto no tiene validaciones y se pueden repetir valores por lo que se tiene que mejorar.
-## Creando un usuario con el modelo anterior.
+## Validaciones personalizadas email y role.
+Para validar un campo como único hay que colocar lo siguiente en el modelo:
+```javascript
+    email:{
+        type:String,
+        unique:true,
+        required:[true,'El correo es necesario']
+    },
+```
+hay que agregar el campo `unique:true`, además en el servidor hay que agregar la siguiente opción para eliminar un warning:
+```javascript
+mongoose.connect('mongodb://localhost:27017/cafe',
+    {useNewUrlParser: true,
+    useCreateIndex: true}
+    ,(err,res)=>{
+    if(err) throw err;
+    console.log("Conexión BD ON");
+});
+```
+Para personalizar mensajes de error de las validaciones se utilizará el paquete `mongoose-unique-validator`:
+```javascript
+npm install --save mongoose-unique-validator
+```
+En el modelo del usuario donde esta declarado el `unique` se importa lo siguiente:
+```javascript
+const uniqueValidator = require('mongoose-unique-validator');
+```
+al terminar colocar:
+```javascript
+usuarioSchema.plugin(uniqueValidator,{message:'{PATH} debe ser único'});
+```
+esto significa que ese esquema va a utilizar el plugin unique validator y ademas tendra un campo de mensaje con el campo que entrará en conflico y será remplazado por {PATH} y saldrá que debe ser único.
+
+Ahora supongamos que se quiere añadir un valor en el campo `role`, que este puede tomar solo dos valores `USER_ROLE` o `ADMIN_ROLE`, actualmente puede tomar cualquier valor y solo queremos que tome dos valores posibles.
+Para solucionar esto se hace lo siguiente:
+```javascript
+let rolesValidos = {
+    values: ['USER_ROLE','ADMIN_ROLE'],
+    message: '{VALUE} no es un rol válido.'
+};
+```
+se crea un objeto que va a ser asignado a un enum en roles, el `{VALUES}` toma el valor de lo que ingresa el usuario y servirá para decir que no es válido.
+ahora se agrega el enum:
+```javascript
+role:{
+    type:String,
+    default:'USER_ROLE',
+    enum:rolesValidos
+},
+```
+Finalmente el archivo queda así:
+```javascript
+const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
+
+let rolesValidos = {
+    values: ['USER_ROLE','ADMIN_ROLE'],
+    message: '{VALUE} no es un rol válido.'
+};
+
+let Schema = mongoose.Schema;
+let usuarioSchema = new Schema({
+    nombre:{
+        type:String,
+        required:[true,'El nombre es necesario']
+    },
+    email:{
+        type:String,
+        unique:true,
+        required:[true,'El correo es necesario']
+    },
+    password:{
+        type:String,
+        required:[true,'La contraseña es obligatoria']
+    },
+    img:{
+        type:String
+    },
+    role:{
+        type:String,
+        default:'USER_ROLE',
+        enum:rolesValidos
+    },
+    estado:{
+        type:Boolean,
+        default:true
+    },
+    google:{
+        type:Boolean,
+        default:false
+    }
+});
+
+usuarioSchema.plugin(uniqueValidator,{message:'{PATH} debe ser único'});
+module.exports = mongoose.model('Usuario',usuarioSchema);
+```
