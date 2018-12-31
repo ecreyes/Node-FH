@@ -117,3 +117,250 @@ app.listen(process.env.PORT,()=>{
     console.log(`Server ON puerto ${process.env.PORT}`);
 });
 ```
+
+## Conectar server a base de datos con Moongose.
+Se conectará el servidor a MongoDB utilizando `moongose` que es un paquete que permite hacer este proceso,
+se instala de la siguiente forma:
+```javascript
+npm install mongoose --save
+```
+Este paquete permite manejar toda la base de datos creando modelos, consultas etc, por lo que es recomendable ir al sitio oficial de moongose y ver la documentación.
+
+Luego hacer el require en el archivo del server:
+```javascript
+const mongoose = require('mongoose');
+```
+Ahora antes del app.listen del servidor colocar:
+```javascript
+mongoose.connect('mongodb://localhost:port/my_database',{useNewUrlParser: true},callback);
+```
+* localhost: dirección donde se encuentra la base de datos.
+* port: puerto de la base de datos
+* my_database: nombre de la base de datos.
+* {useNewUrlParser: true}: es un objeto json con configuraciones, se pueden añadir más opciones dentro del json.
+* callback : error o conexión exitosa
+
+quedaria de la siguiente forma:
+```javascript
+mongoose.connect('mongodb://localhost:27017/cafe',{useNewUrlParser: true},(err,res)=>{
+    if(err) throw err;
+    console.log("Conexión realizada correctamente");
+});
+ 
+app.listen(process.env.PORT,()=>{
+    console.log(`Server ON PORT ${process.env.PORT}`);
+});
+```
+No es necesario que la base de datos se cree anteriormente, esta se creara cuando se realize alguna inserción.
+
+## Ordenar rutas.
+Para ordenar las rutas es bastante simple, en la carpeta server crear una nueva carpeta llamada `routes`,dentro de esa carpeta crear un archivo `usuario.js` porque contendra las rutas de usuario, bueno se copian todas las rutas que son:
+```javascript
+app.get('/usuarios',(req, res)=> {
+    let usuarios = [{
+        id:1,
+        nombre:"Eduardo"
+    },{
+        id:2,
+        nombre:"Carlos"
+    },{
+        id:3,
+        nombre:"Ignacio"
+    }];
+    res.json(usuarios);
+});
+
+app.post('/usuarios',(req,res)=>{
+    let body = req.body;
+    if(!body.nombre){
+        res.status(400).json({
+            ok:false,
+            mensaje:'falta enviar el nombre'
+        });
+    }else{
+        let objeto = {
+            id:body.id,
+            nombre:body.nombre
+        };
+        res.json(objeto);
+    }
+});
+
+app.put('/usuarios/:id',(req,res)=>{
+    let id = req.params.id;
+    let objeto = {
+        id:id,
+        mensaje:"recibido correctamente"
+    }
+    res.json(objeto);
+});
+
+app.delete('/usuarios',(req,res)=>{
+    res.json('delete usuarios');
+});
+```
+ahora para que esto funcione se tiene que declarar el app y exportarlo quedando asi:
+```javascript
+const express = require('express');
+const app = express();
+
+app.get('/usuarios',(req, res)=> {
+    let usuarios = [{
+        id:1,
+        nombre:"Eduardo"
+    },{
+        id:2,
+        nombre:"Carlos"
+    },{
+        id:3,
+        nombre:"Ignacio"
+    }];
+    res.json(usuarios);
+});
+
+app.post('/usuarios',(req,res)=>{
+    let body = req.body;
+    if(!body.nombre){
+        res.status(400).json({
+            ok:false,
+            mensaje:'falta enviar el nombre'
+        });
+    }else{
+        let objeto = {
+            id:body.id,
+            nombre:body.nombre
+        };
+        res.json(objeto);
+    }
+});
+
+app.put('/usuarios/:id',(req,res)=>{
+    let id = req.params.id;
+    let objeto = {
+        id:id,
+        mensaje:"recibido correctamente"
+    }
+    res.json(objeto);
+});
+
+app.delete('/usuarios',(req,res)=>{
+    res.json('delete usuarios');
+});
+
+module.exports = app;
+```
+Ahora en el archivo del servidor colocar `app.use(require('./routes/usuario'));`.
+
+## Modelos.
+Para usar modelos primero hay que crear una carpeta `models` dentro de server, en este ejemplo se creará el modelo de usuario, por lo cual se crea el archivo `usuario.js` dentro de models.
+En el archivo se empieza cargando moongose:
+```javascript
+const mongoose = require('mongoose');
+```
+Ahora se genera la variable del schema y la variable que generará el schema:
+```javascript
+let Schema = mongoose.Schema;
+let usuarioSchema = new Schema({
+
+});
+```
+Dentro del new Schema() se declara un json donde será del tipo:
+```javascript
+campo:{
+    opcionesJson...
+},
+campo2:{
+    opcionesJson...
+}
+```
+Finalmente queda de la siguente forma:
+```javascript
+const mongoose = require('mongoose');
+
+let Schema = mongoose.Schema;
+let usuarioSchema = new Schema({
+    nombre:{
+        type:String,
+        required:[true,'El nombre es necesario']
+    },
+    email:{
+        type:String,
+        required:[true,'El correo es necesario']
+    },
+    password:{
+        type:String,
+        required:[true,'La contraseña es obligatoria']
+    },
+    img:{
+        type:String
+    },
+    role:{
+        type:String,
+        default:'USER_ROLE'
+    },
+    estado:{
+        type:Boolean,
+        default:true
+    },
+    google:{
+        type:Boolean,
+        default:false
+    }
+});
+
+module.exports = mongoose.model('Usuario',usuarioSchema);
+```
+* required: Los required puede ser simplemente `required:true` pero si aparece algun error saldria en ingles, por eso el corchetes con el mensaje.
+* type: tipo de dato que se admite
+* default: valor por default al crear un objeto si no se ingresa el valor.
+
+Finalmente para crear el modelo se utiliza:
+```javascript
+mongoose.model('Usuario',usuarioSchema);
+```
+que inidica el nombre del modelo, en este caso se va a llamar `Usuario` y va a tener toda la configuración de la variable `usuarioSchema`.
+
+Para ver si este modelo funciona correctamente se hace lo siguiente:
+En postman verificar que la ruta post esta funcionando correctamente cuando se envian parámetros.
+En `routes/usuario` se importa el modelo:
+```javascript
+const Usuario = require('../models/usuario');
+```
+y en la ruta de post se hace lo siguiente:
+```javascript
+let body = req.body;
+let usuario = new Usuario({
+    nombre: body.nombre,
+    email: body.email,
+    password: body.password,
+    role: body.role
+});
+```
+se crea una instancia del modelo con los campos y los valores que se reciben, finalmente queda de la siguiente forma:
+```javascript
+app.post('/usuarios',(req,res)=>{
+    let body = req.body;
+    let usuario = new Usuario({
+        nombre: body.nombre,
+        email: body.email,
+        password: body.password,
+        role: body.role
+    });
+    usuario.save((error,usuarioDB)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            res.json({
+                ok:true,
+                persona:usuarioDB
+            });
+        }
+    });
+});
+```
+El `usuario.save(callback)` guarda la instancia y el callback recibe dos parametros uno en caso de que no se pueda guardar generando un error, y el segundo una respuesta al guardar correctamente que en este caso son todos los datos del archivo creado.
+Hay que destacar que esto no tiene validaciones y se pueden repetir valores por lo que se tiene que mejorar.
+## Creando un usuario con el modelo anterior.
