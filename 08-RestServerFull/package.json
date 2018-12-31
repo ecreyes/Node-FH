@@ -1,0 +1,15 @@
+{
+  "name": "08-restserverfull",
+  "version": "1.0.0",
+  "description": "Servidor rest completo",
+  "main": "server/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eduardo Reyes",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4"
+  }
+}
