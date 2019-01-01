@@ -589,3 +589,182 @@ app.put('/usuarios/:id',(req,res)=>{
 });
 ```
 El `context:'query'` se añade para que permita actualizar el correo ya que la validación del modelo no permitia actualizarlo.
+
+## Obtener todos los usuarios de forma páginada.
+Si se desea obtener un listado de datos de forma sencilla, se logra de este modo:
+```javascript
+app.get('/usuarios',(req, res)=> {
+    Usuario.find({}).exec((error,usuarios)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            res.json({
+                ok:true,
+                usuarios:usuarios
+            });
+        }
+    });
+});
+```
+Se utilza el modelo de Usuario, en este se aplica el método find que dentro puede tener algun tipo de filtro, pero como no tiene nada recupera todo, y exec para ejecutar la consulta, se pasa un callback con el error y la respuesta.
+* Si se utiliza el `.limit(5)` este solo devolverá solo 5 registros, si no se especifica de donde empezar serán los primeros 5.
+* Si se utiliza `.skip(5)` esto hará que se salten los primeros 5 registros al realizar la consulta.
+
+Se pueden recibir parámetros opcionales de las url utilizando `req.query.algo` por ejemplo si en la url ingresan:
+`localhost:3000/usuarios?desde=8` se tendria que recibir con `req.query.desde`, los parámetros opcionales siempre se ingresan con el `?`, queda de la siguiente forma:
+```javascript
+app.get('/usuarios',(req, res)=> {
+    let desde = Number(req.query.desde) || 0;
+    let limite = Number(req.query.limite) || 5
+    Usuario.find({})
+    .skip(desde)
+    .limit(limite)
+    .exec((error,usuarios)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            res.json({
+                ok:true,
+                usuarios:usuarios
+            });
+        }
+    });
+});
+```
+
+## Retornar número total de registros.
+Para retornar el número total de documentos o de elementos de esa "tabla" se usa lo siguiente:
+```javascript
+app.get('/usuarios',(req, res)=> {
+    let desde = Number(req.query.desde) || 0;
+    let limite = Number(req.query.limite) || 5
+    Usuario.find({})
+    .skip(desde)
+    .limit(limite)
+    .exec((error,usuarios)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            Usuario.countDocuments({},(error,total)=>{
+                res.json({
+                    ok:true,
+                    total_usuarios:total,
+                    usuarios:usuarios
+                });
+            });
+        }
+    });
+});
+```
+Se utiliza el `Usuario.countDocuments({},callback)` esto contará todos los elementos, tambien se podrian añadir opciones al realizar la búsqueda.
+Recordar que se puede filtrar dentro de ese {} usando por ejemplo:
+* {nombre:'test1'}
+* {google:true}
+
+## Filtrando campos en la respuesta de un find.
+Por ejemplo si solo se desean obtener ciertos campos al realizar la consulta se usa lo siguiente:
+```javascript
+
+app.get('/usuarios',(req, res)=> {
+    let desde = Number(req.query.desde) || 0;
+    let limite = Number(req.query.limite) || 5
+    Usuario.find({},'nombre email role estado google img')
+    .skip(desde)
+    .limit(limite)
+    .exec((error,usuarios)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            Usuario.countDocuments({},(error,total)=>{
+                res.json({
+                    ok:true,
+                    total_usuarios:total,
+                    usuarios:usuarios
+                });
+            });
+        }
+    });
+});
+```
+En un string se colocan los campos respectivos.
+
+## Borrando un usuario de la BD - FISICO.
+Con el siguiente codigo se recibe un parametro id por el body, si lo encuentra borra el dato directamente de la BD y se pierde para siempre.
+```javascript
+app.delete('/usuarios',(req,res)=>{
+    let id = req.body.id;
+    Usuario.findByIdAndDelete(id,(error,usuarioBorrado)=>{
+        if(error || !usuarioBorrado){
+            res.status(400).json({
+                ok:false,
+                mensaje: error || 'El usuario no existe'
+            });
+        }else{
+            res.json({
+                ok:true,
+                usuario:usuarioBorrado
+            });
+        }
+    });
+});
+```
+## Borrado lógico.
+Solo se tiene que actualizar el estado haciendo un update y mostrando en el get solamente los de estado:true, aqui el código:
+```javascript
+app.get('/usuarios',(req, res)=> {
+    let desde = Number(req.query.desde) || 0;
+    let limite = Number(req.query.limite) || 5
+    Usuario.find({estado:true},'nombre email role estado google img')
+    .skip(desde)
+    .limit(limite)
+    .exec((error,usuarios)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            Usuario.countDocuments({estado:true},(error,total)=>{
+                res.json({
+                    ok:true,
+                    total_usuarios:total,
+                    usuarios:usuarios
+                });
+            });
+        }
+    });
+});
+
+app.delete('/usuarios',(req,res)=>{
+    let id = req.body.id;
+    Usuario.findByIdAndUpdate(id,
+        {estado:false},
+        {new:true,runValidators:true,context:'query'},
+        (error,usuarioDB)=>{
+            if(error){
+                res.status(400).json({
+                    ok:false,
+                    mensaje:error
+                });
+            }else{
+                res.json({
+                    ok:true,
+                    usuario:usuarioDB
+                })
+            }
+        }
+    );
+});
+```

@@ -5,17 +5,27 @@ const Usuario = require('../models/usuario');
 const _ = require('underscore');
 
 app.get('/usuarios',(req, res)=> {
-    let usuarios = [{
-        id:1,
-        nombre:"Eduardo"
-    },{
-        id:2,
-        nombre:"Carlos"
-    },{
-        id:3,
-        nombre:"Ignacio"
-    }];
-    res.json(usuarios);
+    let desde = Number(req.query.desde) || 0;
+    let limite = Number(req.query.limite) || 5
+    Usuario.find({estado:true},'nombre email role estado google img')
+    .skip(desde)
+    .limit(limite)
+    .exec((error,usuarios)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            Usuario.countDocuments({estado:true},(error,total)=>{
+                res.json({
+                    ok:true,
+                    total_usuarios:total,
+                    usuarios:usuarios
+                });
+            });
+        }
+    });
 });
 
 app.post('/usuarios',(req,res)=>{
@@ -62,7 +72,24 @@ app.put('/usuarios/:id',(req,res)=>{
 });
 
 app.delete('/usuarios',(req,res)=>{
-    res.json('delete usuarios');
+    let id = req.body.id;
+    Usuario.findByIdAndUpdate(id,
+        {estado:false},
+        {new:true,runValidators:true,context:'query'},
+        (error,usuarioDB)=>{
+            if(error){
+                res.status(400).json({
+                    ok:false,
+                    mensaje:error
+                });
+            }else{
+                res.json({
+                    ok:true,
+                    usuario:usuarioDB
+                })
+            }
+        }
+    );
 });
 
 module.exports = app;
