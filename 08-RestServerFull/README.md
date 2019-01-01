@@ -459,3 +459,133 @@ let usuarioSchema = new Schema({
 usuarioSchema.plugin(uniqueValidator,{message:'{PATH} debe ser único'});
 module.exports = mongoose.model('Usuario',usuarioSchema);
 ```
+## Encriptación de contraseñas.
+La encriptación se realizará con el paquete de bcrypt,este se instala con:
+```javascript
+npm install bcrypt --save
+```
+Luego se importa en el archivo que contenga las contraseñas a encriptar,en este caso en `routes/usuario.js` ya que ese archivo recibe la contraseña del usuario por post:
+```javascript
+const bcrypt = require('bcrypt');
+```
+La encriptación queda de la siguiente forma:
+```javascript
+let body = req.body;
+let usuario = new Usuario({
+    nombre: body.nombre,
+    email: body.email,
+    password: bcrypt.hashSync(body.password, 10),
+    role: body.role
+});
+```
+Se utilizá `bcrypt.hashSync(body.password, 10),` donde recibe el password en texto plano y el número de salt para generar el password encriptado, mientras mas alto el número mayor nivel de encriptación.
+
+Ahora si vemos la función completa queda:
+```javascript
+app.post('/usuarios',(req,res)=>{
+    let body = req.body;
+    let usuario = new Usuario({
+        nombre: body.nombre,
+        email: body.email,
+        password: bcrypt.hashSync(body.password, 10),
+        role: body.role
+    });
+    usuario.save((error,usuarioDB)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            res.json({
+                ok:true,
+                persona:usuarioDB
+            });
+        }
+    });
+});
+```
+si se inserta correctamente devuelve el objeto completo y este viene con la contraseña encriptada, lo que interesa ahora es no mostrar ese campo por temas de seguridad.
+Se hace de la siguiente forma, ir al modelo correspondiente, en este caso el de usuario  y colocar:
+```javascript
+usuarioSchema.methods.toJSON = function (){
+    let user = this;
+    let userObject = user.toObject();
+    delete userObject.password;
+    return userObject;
+};
+```
+Esto obtendra el json del usuario en su momento,lo pasa como objeto y elimina el campo password. El método toJSON se ejectuara cuando el objeto se envie como respuesta json.
+
+## Actualizar información del usuario.
+La actualización de datos se hace en las peticiones `put`, esto se hace de la siguiente forma:
+```javascript
+app.put('/usuarios/:id',(req,res)=>{
+    let id = req.params.id;
+    let body = req.body;
+    Usuario.findByIdAndUpdate(id,body,{new:true},(error,usuarioDB)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            res.json({
+                ok:true,
+                usuario:usuarioDB
+            })
+        }
+
+    });
+});
+```
+se captura el id de la url y el body para saber cual dato actualizar y con que elementos,luego se ocupa el modelo de Usuario ya que el modelo maneja las consultas, se utiliza findByIdAndUpdate este puede recibir multiples parámetros y algunos pueden ser opcionales (mayor detalle en documentacion):
+* parametro1 : id del objeto
+* parametro2 : datos nuevos u objeto nuevo con los datos actualizar.
+* parametro3 : objeto de opciones (mayor detalle en documentación), el new va a permitir que al finalizar la consulta se retorne el objeto actualizado.
+* parametro4: callback con el error y la respuesta.
+Si hay error se devuelve el error, si se actualiza correctamente se devuelve el usuario actualizado.
+
+`PROBLEMA`: NO HAY VALIDACIONES AL HACER ESTO AÚN, ES DECIR SE PUEDE ACTUALIZAR CUALQUIER COSA.
+si aparece algun error de deprecación se puede colocar esta opción en el mongoose.connect `useFindAndModify: false`
+
+## Validaciones.
+La validación más facil que se puede hacer es permitir solo los campos del modelo, esto se hace con:
+```javascript
+runValidators:true
+```
+se agrega en las opciones del parametro3 donde antes estaba el `new:true`. Esto ahora permitirá modificar solo campos válidos que permite el modelo, por ejemplo ahora ya no se puede actualizar un correo en uso, o agregar un rol que no esta dentro de las opciones válidas. El problema de esto es que aún puede modificar campos del modelo como por ejemplo el password ya que esta permitido.
+
+Para quitar los campos que no se desean actualizar se utilizará un paquete llamado `Underscore` que trae un kit de herramientas para javascript con métodos ya creados para manipular variables, esta libreria tambien puede ser remplazada por `lodash`.
+
+La libreria se instala con :
+```javascript
+npm install underscore --save
+```
+Se utiliza con:
+```javascript
+const _ = require('underscore');
+```
+En este ejemplo se utilizará el método pick que trae la libreria para solamente tomar los campos que se necesitan del objeto, es decir los campos que si se pueden actualizar, quedando de la siguiente forma:
+```javascript
+app.put('/usuarios/:id',(req,res)=>{
+    let id = req.params.id;
+    let body = req.body;
+    body = _.pick(body,['nombre','email','img','estado','role']);
+    Usuario.findByIdAndUpdate(id,body,{new:true,runValidators:true,context: 'query'},(error,usuarioDB)=>{
+        if(error){
+            res.status(400).json({
+                ok:false,
+                mensaje:error
+            });
+        }else{
+            res.json({
+                ok:true,
+                usuario:usuarioDB
+            })
+        }
+
+    });
+});
+```
+El `context:'query'` se añade para que permita actualizar el correo ya que la validación del modelo no permitia actualizarlo.
