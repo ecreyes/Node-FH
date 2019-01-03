@@ -784,3 +784,119 @@ En el ejemplo anterior como habian dos archivos con las rutas, estas se importar
 ```javascript
 app.use(require('./routes/routes'));
 ```
+
+## Login de usuario.
+Para iniciar sesion se debe crear un archivo `login.js` con las importaciones respectivas, luego recuperar el usuario de la base de datos ver si existe y comparar la contraseña:
+```javascript
+const express = require('express');
+const app = express();
+const bcrypt = require('bcrypt');
+const Usuario = require('../models/usuario');
+
+app.post('/login',(req,res)=>{
+    let body = req.body;
+    Usuario.findOne({email:body.email},(error,usuarioDB)=>{
+        if(error){
+            return res.status(400).json({
+                ok:false,
+                error
+            });
+        }
+        if(!usuarioDB){
+            return res.status(400).json({
+                ok:false,
+                error:{
+                    mensaje:'(Usuario) o contraseña incorrectos.'
+                }
+            });
+        }
+        if(!bcrypt.compareSync(body.password, usuarioDB.password)){
+            return res.status(400).json({
+                ok:false,
+                error:{
+                    mensaje:'Usuario o (contraseña) incorrectos.'
+                }
+            });
+        }
+        return res.json({
+            ok:true,
+            usuario:usuarioDB,
+            token:'token'
+        });
+    });
+});
+
+module.exports = app;
+```
+Tambien se debe enviar el token que se generará ahora.
+## JSON WEB TOKEN (JWT)
+Se instala con:
+```javasccript
+npm install jsonwebtoken --save
+```
+
+Para generar el payload y la fecha de expiración se coloca:
+```javascript
+let token = jwt.sign({
+    usuario: usuarioDB
+    }, process.env.JWTSeed, { expiresIn: process.env.JWTExpire });
+```
+en las variables de configuración esta:
+```javascript
+process.env.JWTExpire = process.env.JWTExpire || 60 * 60 * 24 * 30;
+process.env.JWTSeed = process.env.JWTSeed ||'seed-development';
+```
+Seria `60[s] * 60[min]* 24[h] * 30 [dias]`, va a demorar 30 dias.
+
+## Middlewares.
+En la carpeta server se debe crear una nueva carpeta llamada `middlewares`, dentro de esta carpeta se generará un archivo para la autenticación quedando `autenticacion.js`:
+```javascript
+let verificarToken = (req,res,next)=>{
+
+};
+
+module.exports = {
+    verificarToken
+}
+```
+Ahora ¿que es el middleware?, el middleware es una función que se encargará de de permitir o rechazar algun tipo de petición, es decir se coloca como un intermediario que decide algo o no. Este se utiliza de la siguiente forma por ejemplo:
+```javascript
+app.get('ruta',nombreMiddleware,callback){
+
+};
+```
+el get tambien podria ser post o cualquier tipo de petición, de esa forma se indica que ese middleware se encargara de permitir o rechazar algun tipo de acceso a esa petición.
+Ahora el middleware posee un tercer parametro el `next`, la única forma de que el middleware permita el acceso y se pueda ejecutar el callback de la peticion es ejecutando la función `next`, si esta nunca se llama no se ejecutara el callback es decir se negará la peticion.
+
+El primer middlware se usara para validar los tokens de sesión, estos tokens no se enviarán ni por body ni por url, se enviarán en la sección `Headers` del postman, las variables se ingresan igual como si se enviaran por body.
+
+Ahora como se recibe el token desde un header?, de la siguiente forma:
+```javascript
+let token = req.get('token');
+```
+obviamente el campo que se debio ingresar en postman sería `token` si fuese otra cosa se usa el get pero con el nombre del parámetro nuevo.
+Ahora hay que verificar que el token es el correcto quedando de la siguiente forma:
+```javascript
+const jwt = require('jsonwebtoken');
+
+let verificarToken = (req,res,next)=>{
+    let token = req.get('token');
+    jwt.verify(token, process.env.JWTSeed,(error, decoded)=> {
+        if(error){
+            return res.status(401).json({
+                ok:false,
+                error
+            });
+        }
+        req.usuario = decoded.usuario;
+        next();
+    });
+};
+
+module.exports = {
+    verificarToken
+};
+```
+Se recibe el token por el header luego se verifica si este es correcto, si esta correcto se obtiene toda la informacion en el `decoded`, se pueder hacer un console.log para ver que contiene, es lo mismo que se ve en jwt.io, entonces se guarda en el `req.usuario` el payload de usuario y se llama el next porque el token es valido y puede continuar con la consulta.
+
+Nota: una vez iniciado el login el token debe ser guardardo en el localstorage, esto es tarea del frontend

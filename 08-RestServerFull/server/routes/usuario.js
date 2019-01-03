@@ -2,9 +2,10 @@ const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
 const Usuario = require('../models/usuario');
+const {verificarToken} = require('../middlewares/autenticacion');
 const _ = require('underscore');
 
-app.get('/usuarios',(req, res)=> {
+app.get('/usuarios',verificarToken,(req, res)=> {
     let desde = Number(req.query.desde) || 0;
     let limite = Number(req.query.limite) || 5
     Usuario.find({estado:true},'nombre email role estado google img')
@@ -14,7 +15,7 @@ app.get('/usuarios',(req, res)=> {
         if(error){
             res.status(400).json({
                 ok:false,
-                mensaje:error
+                error
             });
         }else{
             Usuario.countDocuments({estado:true},(error,total)=>{
@@ -40,7 +41,7 @@ app.post('/usuarios',(req,res)=>{
         if(error){
             res.status(400).json({
                 ok:false,
-                mensaje:error
+                error
             });
         }else{
             res.json({
@@ -59,7 +60,7 @@ app.put('/usuarios/:id',(req,res)=>{
         if(error){
             res.status(400).json({
                 ok:false,
-                mensaje:error
+                error
             });
         }else{
             res.json({
@@ -80,7 +81,7 @@ app.delete('/usuarios',(req,res)=>{
             if(error){
                 res.status(400).json({
                     ok:false,
-                    mensaje:error
+                    error
                 });
             }else{
                 res.json({
