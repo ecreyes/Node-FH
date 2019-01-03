@@ -10,7 +10,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // Rutas
-app.use(require('./routes/usuario'));
+app.use(require('./routes/routes'));
 // BD
 const mongoose = require('mongoose');
  

@@ -768,3 +768,19 @@ app.delete('/usuarios',(req,res)=>{
     );
 });
 ```
+
+## Ordenando las rutas del servidor.
+Para mantener todas las rutas en un solo lugar se debe crear un archivo `routes.js` dentro de la carpeta routes,luego este debe contener todas las rutas de los archivos por ejemplo:
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(require('./usuario'));
+app.use(require('./login'));
+
+module.exports = app;
+```
+En el ejemplo anterior como habian dos archivos con las rutas, estas se importaron en ese archivo en vez de colocarlo directamente en el servidor, ahora el archivo del server queda:
+```javascript
+app.use(require('./routes/routes'));
+```
