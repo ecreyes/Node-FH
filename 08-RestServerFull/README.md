@@ -899,4 +899,51 @@ module.exports = {
 ```
 Se recibe el token por el header luego se verifica si este es correcto, si esta correcto se obtiene toda la informacion en el `decoded`, se pueder hacer un console.log para ver que contiene, es lo mismo que se ve en jwt.io, entonces se guarda en el `req.usuario` el payload de usuario y se llama el next porque el token es valido y puede continuar con la consulta.
 
-Nota: una vez iniciado el login el token debe ser guardardo en el localstorage, esto es tarea del frontend
+Nota: una vez iniciado el login el token debe ser guardardo en el localstorage, esto es tarea del frontend.
+
+## Populate.
+populate se usa para recuperar mas información de una respuesta de la base de datos por ejemplo viene un documento y este contiene el id de un usuario que creo ese documento, si se necesita saber toda la información del usuario o algunos campos respectivos se usa el populate al hacer la consulta.
+Ejemplo:
+```javascript
+app.get('/categorias',verificarToken,(req,res)=>{
+    Categoria.find({})
+    .sort('nombre')
+    .populate('usuario','nombre email')
+    .exec((error,categoriasDB)=>{
+        if(error){
+            return res.status(400).json({
+                ok:false,
+                error
+            });
+        }else{
+            res.json(categoriasDB);
+        }
+    });
+});
+```
+el primer parametro del populate es al campo que se desea obtener mas datos y el segundo es para recibir campos especificos, si se desea adquirir toda la información el segundo parametro puede quedar vacio.
+El sort permite ordenar los datos de forma alfabetica.
+En el modelo de categoria se debe hacer la relación para que esto funcione:
+```javascript
+const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
+
+let Schema = mongoose.Schema;
+
+let categoriaSchema = new Schema({
+    nombre:{
+        type:String,
+        required:[true,'El nombre de categoria es necesario'],
+        unique:true,
+    },
+    usuario:{
+        type: Schema.Types.ObjectId,
+        ref: 'Usuario'
+    }
+});
+
+
+categoriaSchema.plugin(uniqueValidator,{message:'{PATH} debe ser único'});
+module.exports = mongoose.model('Categoria',categoriaSchema);
+```
+El ref `Usuario` indica que se esta haciendo referencia al modelo de usuario.

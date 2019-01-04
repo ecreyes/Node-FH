@@ -14,6 +14,21 @@ let verificarToken = (req,res,next)=>{
     });
 };
 
+let verificarAdminRole = (req,res,next)=>{
+    let usuario = req.usuario;
+    if(usuario.role == 'ADMIN_ROLE'){
+        next();
+    }else{
+        return res.status(401).json({
+            ok:false,
+            error:{
+                mensaje:"Permiso denegado."
+            }
+        })
+    }
+};
+
 module.exports = {
-    verificarToken
+    verificarToken,
+    verificarAdminRole
 };
