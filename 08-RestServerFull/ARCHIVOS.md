@@ -199,7 +199,6 @@ let imagenUsuario = (id,res,nombreArchivo)=>{
             })
         });
     });
-
 }
 
 let borrarArchivo = (nombreArchivo,tipo)=>{
