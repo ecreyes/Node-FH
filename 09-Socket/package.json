@@ -1,0 +1,14 @@
+{
+  "name": "09-socket",
+  "version": "1.0.0",
+  "description": "Ejemplos de sockets",
+  "main": "server/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eduardo Reyes",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}
