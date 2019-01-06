@@ -13,14 +13,8 @@ const port = process.env.PORT || 3000;
 const socketIO = require('socket.io');
 const http = require('http');
 let server = http.createServer(app);
-let io = socketIO(server);
-
-io.on('connection',(client)=>{
-    console.log('Usuario conectado');
-    client.on('disconnect',()=>{
-        console.log('cliente se ha desconectado!.');
-    });
-});
+module.exports.io = socketIO(server);
+require('./sockets/socket');
 
 server.listen(port, (err) => {
     if (err) throw new Error(err);
